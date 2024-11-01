@@ -29,20 +29,30 @@ O projeto possui um simples código Go que imprime a mensagem desejada. Utilizam
 
 ### Dockerfile
 
-O Dockerfile utiliza uma imagem base mínima (`scratch`) e um binário estático gerado para o Go. Isso resulta em uma imagem extremamente compacta, atendendo ao requisito de menos de 2MB.
+O Dockerfile utiliza uma imagem base mínima (`scratch`) e um binário estático gerado para o Go, resultando em uma imagem extremamente compacta, atendendo ao requisito de menos de 2MB. Utilizamos as flags `-ldflags="-s -w"` para reduzir o tamanho do binário.
 
 ```dockerfile
 FROM golang:alpine AS builder
+
 WORKDIR /app
+
 COPY . .
-RUN go build -o fullcycle main.go
+
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o fullcycle main.go
 
 FROM scratch
+
 COPY --from=builder /app/fullcycle /fullcycle
+
 ENTRYPOINT ["/fullcycle"]
 ```
+
+### Aviso
+
+As flags `-ldflags="-s -w"` removem informações de depuração e a tabela de símbolos do binário, ajudando a reduzir o tamanho da imagem. Porém, isso também limita a capacidade de gerar "stack traces" detalhados, o que pode dificultar a resolução de problemas em produção. Portanto, é recomendável utilizar ferramentas de monitoramento e logs para complementar o diagnóstico.
 
 ## Links
 
 - Docker Hub: [Link para a imagem Docker](https://hub.docker.com/r/marcosa460/fullcycle-go)
 - Repositório GitHub: [Link para o repositório](https://github.com/marcosa460/fullcycle-go)
+
